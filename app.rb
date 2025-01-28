@@ -3,17 +3,17 @@ require 'slim'
 require 'sqlite3'
 require 'sinatra/reloader'
 
-get ('/') do
+get('/') do
     slim :home
 end
 
-get ('/forum') do
+get('/forum') do
     slim :forum
 end
 
-get ('/profil') do
-    slim :profile
+get('/profil') do
     db = SQLite3::Database.new("db/horoskop.db")
-    result = db.execute("SELECT * FROM users")
-    slim(:users, locals:{users: result})
+    db.results_as_hash = true
+    @result = db.execute("SELECT * FROM users")
+    slim(:users)
 end
