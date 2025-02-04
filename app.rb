@@ -21,7 +21,11 @@ get('/profile') do
     slim(:profile, locals:{users:result})
 end
 
-get('/users/new') do
+get('/register') do
+    slim :register
+end
+
+post('/users/new') do
     username = params[:username]
     password = params[:password]
     password_confirm = params[:password_confirm]
@@ -29,13 +33,30 @@ get('/users/new') do
     if password == password_confirm
         password_digest = BCrypt::Password.create(password)
         db = SQLite3::Database.new("db/horoskop.db")
-        db.execute("INSERT INTO users (username,pwdigest) VALUES (?,?)",{username,password_digest})
+        db.execute("INSERT INTO users (username,pwdigest) VALUES (?,?)",[username,password_digest])
         redirect('/')
     else
         "Lösenorden matchar inte"
     end
 end
 
-get('/showlogin') do
+get('/login') do
     slim(:login)
+end
+
+post('/login') do
+    username = params[:username]
+    password = params[:password]
+    db = SQLite3::Database.new('db/horoskop.db')
+    db.results_as_hash = true
+    result = db.execute("SELECT * FROM users WHERE username = ?",[username]).first
+    pwdigest = result["pwdigest"]
+    id = result["id"]
+    id = result["id"]
+  if BCrypt::Password.new(pwdigest) == password
+    session[:id] = id
+    redirect('/')
+  else
+    "Fel lösenord"
+  end
 end
