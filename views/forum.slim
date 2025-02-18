@@ -6,5 +6,12 @@ html lang="en"
         title Forum
         link rel="stylesheet" href="/css/style.css"/
     body 
+    nav 
+    - if session[:id]
+        a href="/profile" Min profil
+        a href="/logout" Logga ut
+    - else
+        a href="/login" Logga in
+        a href="/register" Registrera
     h1 Forum
     h2 Inlägg:
