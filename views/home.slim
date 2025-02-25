@@ -6,11 +6,13 @@ html lang="en"
         title Hem
         link rel="stylesheet" href="/css/style.css"/
     body
-    nav 
+    h1 Hem
     - if session[:id]
+        p inloggad som #{session[:username]}
         a href="/profile" Min profil
         a href="/logout" Logga ut
     - else
         a href="/login" Logga in
         a href="/register" Registrera
-    h1 Hem
+
+    p session: #{session.inspect}

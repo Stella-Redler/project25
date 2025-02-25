@@ -7,7 +7,11 @@ require 'bcrypt'
 enable :sessions
 
 get('/') do
-    slim :home
+    if session[:id]
+        slim :logged_in
+    else
+        slim :home
+    end
 end
 
 get('/forum') do
@@ -17,11 +21,16 @@ end
 get('/profile') do
     if session[:id].nil?
         redirect('/login')
-    else
+    else        
         db = SQLite3::Database.new("db/horoskop.db")
         db.results_as_hash = true
-        result = db.execute("SELECT * FROM users")
-        slim(:profile, locals:{users:result})
+        user = db.execute("SELECT * FROM users WHERE id = ?", [session[:id]]).first
+
+        if user.nil?
+            redirect('/login')
+        else
+            slim :profile, locals: { user: user }
+        end
     end
 end
 
@@ -51,7 +60,7 @@ end
 
 get('/login') do
     if session[:id]
-        redirect('/profile')
+        redirect('/')
     else
         slim :login
     end
@@ -73,8 +82,9 @@ post('/login') do
 
     if BCrypt::Password.new(pwdigest).is_password?(password)
         session[:id] = id
+        p session.inspect
         session[:username] = username
-        redirect('/')
+        redirect('/logged_in')
     else
         "Fel användarnamn eller lösenord"
     end
@@ -83,4 +93,8 @@ end
 get('/logout') do
     session.clear
     redirect('/')
+end
+
+get('/logged_in') do
+    slim :logged_in
 end
