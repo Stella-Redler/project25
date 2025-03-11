@@ -18,18 +18,26 @@ get('/forum') do
     slim :forum
 end
 
+post('/forum') do
+    if session[:id].nil?
+        redirect('/login')
+    else
+        
+    end
+end
+
 get('/profile') do
     if session[:id].nil?
         redirect('/login')
     else        
         db = SQLite3::Database.new("db/horoskop.db")
         db.results_as_hash = true
-        user = db.execute("SELECT * FROM users WHERE id = ?", [session[:id]]).first
-
+        user = db.execute("SELECT * FROM users WHERE user_id = ?", [session[:id].to_i]).first
+        db.close
         if user.nil?
             redirect('/login')
         else
-            slim :profile, locals: { user: user }
+            slim :profile, locals: {user: user}
         end
     end
 end
@@ -52,6 +60,7 @@ post('/users/new') do
         password_digest = BCrypt::Password.create(password)
         db = SQLite3::Database.new("db/horoskop.db")
         db.execute("INSERT INTO users (name,username,pwdigest) VALUES (?,?,?)",[name,username,password_digest])
+        db.close
         redirect('/')
     else
         "Lösenorden matchar inte"
@@ -72,6 +81,7 @@ post('/login') do
     db = SQLite3::Database.new('db/horoskop.db')
     db.results_as_hash = true
     result = db.execute("SELECT * FROM users WHERE username = ?",[username]).first
+    db.close
     
     if result.nil? 
         return "Fel användarnamn eller lösenord"
