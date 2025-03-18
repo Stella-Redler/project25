@@ -6,6 +6,16 @@ require 'bcrypt'
 
 enable :sessions
 
+get('/debug') do
+    "Session-data: #{session.inspect}"
+end
+
+get('/set_session') do
+    session[:test] = "Detta är en test-session"
+    "Session satt!"
+end
+
+
 get('/') do
     if session[:id]
         slim :logged_in
@@ -15,14 +25,41 @@ get('/') do
 end
 
 get('/forum') do
+    db = SQLite3::Database.new("db/horoskop.db")
+    db.results_as_hash = true
+    @posts = db.execute("SELECT * FROM posts")
+    db.close
     slim :forum
+end
+
+get('/new') do
+    slim :new
+end
+
+post('/posts/new') do
+    if session[:id].nil?
+        redirect('/login')
+    else
+        db = SQLite3::Database.new("db/horoskop.db")
+        db.results_as_hash = true
+        DB.execute('INSERT INTO posts (title, content) VALUES (?, ?)', [params[:title], params[:content]])
+        redirect ('/forum')
+    end
+end
+
+get('/posts/:id') do
+    db = SQLite3::Database.new("db/horoskop.db")
+    db.results_as_hash = true
+    @posts = DB.execute('SELECT * FROM posts WHERE id = ?', [params[:id]]).first
+    halt 404, "Inlägget finns inte" unless @posts
+    slim :post
 end
 
 post('/forum') do
     if session[:id].nil?
         redirect('/login')
     else
-        
+        slim :forum
     end
 end
 
@@ -90,10 +127,11 @@ post('/login') do
     pwdigest = result["pwdigest"]
     id = result["id"]
 
-    if BCrypt::Password.new(pwdigest).is_password?(password)
+    if BCrypt::Password.new(pwdigest) == password
         session[:id] = id
         p session.inspect
         session[:username] = username
+        session[:logged_in] = true
         redirect('/logged_in')
     else
         "Fel användarnamn eller lösenord"
