@@ -33,7 +33,11 @@ get('/forum') do
 end
 
 get('/new') do
-    slim :new
+    if session[:id].nil?
+        redirect('/login')
+    else
+        slim :new
+    end
 end
 
 post('/posts/new') do
@@ -42,7 +46,7 @@ post('/posts/new') do
     else
         db = SQLite3::Database.new("db/horoskop.db")
         db.results_as_hash = true
-        DB.execute('INSERT INTO posts (title, content) VALUES (?, ?)', [params[:title], params[:content]])
+        db.execute('INSERT INTO posts (title, content) VALUES (?, ?)', [params[:title], params[:content]])
         redirect ('/forum')
     end
 end
@@ -125,7 +129,7 @@ post('/login') do
     end
 
     pwdigest = result["pwdigest"]
-    id = result["id"]
+    id = result["user_id"]
 
     if BCrypt::Password.new(pwdigest) == password
         session[:id] = id
