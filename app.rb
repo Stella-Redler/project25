@@ -6,10 +6,6 @@ require 'bcrypt'
 
 enable :sessions
 
-get('/debug') do
-    "Session-data: #{session.inspect}"
-end
-
 get('/set_session') do
     session[:test] = "Detta är en test-session"
     "Session satt!"
@@ -32,7 +28,7 @@ get('/forum') do
     slim :forum
 end
 
-get('/new') do
+get('/new_post') do
     if session[:id].nil?
         redirect('/login')
     else
@@ -40,7 +36,7 @@ get('/new') do
     end
 end
 
-post('/posts/new') do
+post('/posts/new_post') do
     if session[:id].nil?
         redirect('/login')
     else
@@ -133,7 +129,6 @@ post('/login') do
 
     if BCrypt::Password.new(pwdigest) == password
         session[:id] = id
-        p session.inspect
         session[:username] = username
         session[:logged_in] = true
         redirect('/logged_in')

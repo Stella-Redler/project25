@@ -16,13 +16,5 @@ html lang="en"
     h1 Forum
     h2 Inlägg:
     a href="/new" Nytt inlägg
-    p session: #{session.inspect}
-    
-    posts.each do |post|
-    content_string = post["content"]
-    title_string = post["title"]
 
-    p Content for Post ##{post["post_id"]}: #{content_string}
-    p Title for Post ##{post["post_id"]}: #{title_string}
-    p ----
-    end
+    p #{@posts.join().gsub(/[{}""=>]/,'')}
