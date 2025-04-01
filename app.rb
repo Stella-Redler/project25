@@ -28,7 +28,7 @@ get('/forum') do
     slim :forum
 end
 
-get('/new_post') do
+get('/new') do
     if session[:id].nil?
         redirect('/login')
     else
@@ -36,7 +36,7 @@ get('/new_post') do
     end
 end
 
-post('/posts/new_post') do
+post('/posts/new') do
     if session[:id].nil?
         redirect('/login')
     else
