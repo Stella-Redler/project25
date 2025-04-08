@@ -53,15 +53,15 @@ post('/posts/delete') do
     db = SQLite3::Database.new('db/horoskop.db')
     db.results_as_hash = true
 
-    user = db.execute("SELECT * FROM users WHERE username = ?",[username]).first
+    result = db.execute("SELECT * FROM users WHERE username = ?",[username]).first
 
-    if user.nil? 
+    if result.nil? 
         return "Vänligen fyll i alla uppgifter"
     end
 
-    pwdigest = user["pwdigest"]
+    pwdigest = result["pwdigest"]
 
-    if BCrypt::Password.new(user["pwdigest"]) == password
+    if BCrypt::Password.new(pwdigest) == password
         post = db.execute("SELECT * FROM posts WHERE post_id = ?", [post_id]).first
         if post.nil?
             halt 404, "Inlägget finns inte"
@@ -142,7 +142,7 @@ post('/login') do
     db.close
     
     if result.nil? 
-        return "Fel användarnamn eller lösenord"
+        return "Vänligen fyll i alla uppgifter"
     end
 
     pwdigest = result["pwdigest"]
