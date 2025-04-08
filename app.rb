@@ -6,12 +6,6 @@ require 'bcrypt'
 
 enable :sessions
 
-get('/set_session') do
-    session[:test] = "Detta är en test-session"
-    "Session satt!"
-end
-
-
 get('/') do
     if session[:id]
         slim :logged_in
@@ -42,17 +36,44 @@ post('/posts/new') do
     else
         db = SQLite3::Database.new("db/horoskop.db")
         db.results_as_hash = true
-        db.execute('INSERT INTO posts (title, content) VALUES (?, ?)', [params[:title], params[:content]])
+        db.execute('INSERT INTO posts (creator, title, content) VALUES (?, ?, ?)', [params[:creator], params[:title], params[:content]])
         redirect ('/forum')
     end
 end
 
-get('/posts/:id') do
-    db = SQLite3::Database.new("db/horoskop.db")
+get('/delete') do
+    slim :delete
+end
+
+post('/posts/delete') do
+    username = params[:username]
+    password = params[:password]
+    post_id = params[:post_id]
+
+    db = SQLite3::Database.new('db/horoskop.db')
     db.results_as_hash = true
-    @posts = DB.execute('SELECT * FROM posts WHERE id = ?', [params[:id]]).first
-    halt 404, "Inlägget finns inte" unless @posts
-    slim :post
+
+    user = db.execute("SELECT * FROM users WHERE username = ?",[username]).first
+
+    if user.nil? 
+        return "Vänligen fyll i alla uppgifter"
+    end
+
+    pwdigest = user["pwdigest"]
+
+    if BCrypt::Password.new(user["pwdigest"]) == password
+        post = db.execute("SELECT * FROM posts WHERE post_id = ?", [post_id]).first
+        if post.nil?
+            halt 404, "Inlägget finns inte"
+        elsif post["creator"] != username
+            halt 403, "Du har inte tillåtelse att radera detta inlägg"
+        else
+            db.execute("DELETE FROM posts WHERE post_id = ?", [post_id])
+            redirect('/forum')
+        end
+    else
+        halt 401, "Felaktigt lösenord"
+    end
 end
 
 post('/forum') do
