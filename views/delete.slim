@@ -1,6 +1,6 @@
 h1 Radera inlägg
-form action="posts/delete" method="POST" 
-    input type="text" name="post_id" placeholder="Inläggets id"
+form action="/posts/delete" method="POST" 
+    input type="hidden" name="post_id" placeholder="Inläggets id" value="#{@post_id}"
     input type="text" name="username" placeholder="Användarnamn"
     input type="password" name="password" placeholder="Lösenord"
     input type="submit" value="Radera inlägg"/

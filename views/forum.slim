@@ -17,4 +17,12 @@ html lang="en"
     a href="/new" Nytt inlägg
     a href="/delete" Radera inlägg
 
-    p #{@posts.join().gsub(/[{}""=>]/,'')}
+    - @posts.each do |post|
+        .post
+            h3 = post["title"]
+            p = post["content"]
+            p Skapad av: #{post["creator"]}
+            - if session[:username] == post["creator"]
+                a href="/posts/#{post["post_id"]}/edit" Redigera
+                a href="/posts/delete/#{post["post_id"]}" Radera
+            p ----------

@@ -1,0 +1,9 @@
+h1 Redigera inlägg
+form action="/posts/#{post['post_id']}/edit" method="post"
+  label Titel:
+  input type="text" name="title" value=post["title"]
+  br
+  label Innehåll:
+  textarea name="content" = post["content"]
+  br
+  input type="submit" value="Spara ändringar"
