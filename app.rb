@@ -23,7 +23,7 @@ get('/forum') do
     db.results_as_hash = true
     @posts = db.execute("SELECT * FROM posts")
     db.close
-    slim :forum
+    slim :"posts/forum"
 end
 
 # Sida för att skapa nytt inlägg – endast för inloggade
@@ -31,12 +31,12 @@ get('/new') do
     if session[:id].nil?
         redirect('/login') # Om inte inloggad, skicka till login
     else
-        slim :new
+        slim :"posts/new"
     end
 end
 
 # Tar emot och sparar ett nytt inlägg i databasen
-post('/posts/new') do
+post('/posts') do
     if session[:id].nil?
         redirect('/login')
     else
@@ -53,7 +53,7 @@ get('/posts/delete/:id') do
         redirect('/login')
     else
         @post_id=params[:id]
-        slim :delete
+        slim :"posts/delete"
     end
 end
 
@@ -106,7 +106,7 @@ get('/posts/:id/edit') do
         elsif post["creator"] != session[:username]
             halt 403, "Du får inte redigera detta inlägg"
         else
-            slim :edit, locals: { post: post }
+            slim :"posts/edit", locals: { post: post }
         end
     end
 end
@@ -147,7 +147,7 @@ get('/profile') do
         if user.nil?
             redirect('/login')
         else
-            slim :profile, locals: {user: user}
+            slim :"users/profile", locals: {user: user}
         end
     end
 end
@@ -157,12 +157,12 @@ get('/register') do
     if session[:id]
         redirect('/')
     else
-        slim :register
+        slim :"users/register"
     end
 end
 
 # Skapar en ny användare
-post('/users/new') do
+post('/users') do
     username = params[:username]
     password = params[:password]
     name = params[:name]
@@ -185,7 +185,7 @@ get('/login') do
     if session[:id]
         redirect('/')
     else
-        slim :login
+        slim :"users/login"
     end
 end
 
