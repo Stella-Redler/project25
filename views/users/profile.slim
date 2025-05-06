@@ -2,4 +2,9 @@ a href="/logout" Logga ut
 
 h1 Mitt horoskop
 h2 din profil:
-p #{user}
+
+
+.user
+  h3 #{user["name"]}
+  p Användarnamn: #{user["username"]}
+  p Användar-ID: #{user["user_id"]}

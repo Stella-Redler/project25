@@ -8,9 +8,17 @@ require 'bcrypt' # Kryptering av lösenord
 # Aktiverar sessions för att hålla användare inloggade
 enable :sessions
 
+# Centralt before-filter som skyddar alla routes utom de publika
+before do
+    protected = ["/new", "/profile", "/edit", "/delete"]
+        if protected.any? { |path| request.path_info.start_with?(path) } && session[:user_id].nil?
+        redirect('/login')
+    end
+end
+
 # Startsidan: visar antingen hem för utloggade eller hem för inloggade beroende på session
 get('/') do
-    if session[:id]
+    if session[:user_id]
         slim :logged_in
     else
         slim :home
@@ -28,33 +36,21 @@ end
 
 # Sida för att skapa nytt inlägg – endast för inloggade
 get('/new') do
-    if session[:id].nil?
-        redirect('/login') # Om inte inloggad, skicka till login
-    else
-        slim :"posts/new"
-    end
+    slim :"posts/new"
 end
 
 # Tar emot och sparar ett nytt inlägg i databasen
 post('/posts') do
-    if session[:id].nil?
-        redirect('/login')
-    else
-        db = SQLite3::Database.new("db/horoskop.db")
-        db.results_as_hash = true
-        db.execute('INSERT INTO posts (creator, title, content) VALUES (?, ?, ?)', [params[:creator], params[:title], params[:content]]) # Skapar ett nytt inlägg med data från formuläret
-        redirect ('/forum')
-    end
+    db = SQLite3::Database.new("db/horoskop.db")
+    db.results_as_hash = true
+    db.execute('INSERT INTO posts (user_id, username, title, content) VALUES (?, ?, ?, ?)',[session[:user_id], session[:username], params[:title], params[:content]]) # Skapar ett nytt inlägg med data från formuläret
+    redirect ('/forum')
 end
 
 # Sida för att radera inlägg – bara för inloggade
 get('/posts/delete/:id') do
-    if session[:id].nil?
-        redirect('/login')
-    else
-        @post_id=params[:id]
-        slim :"posts/delete"
-    end
+    post_id=params[:id]
+    slim :"posts/delete", locals: { post_id: post_id }
 end
 
 # Logik för att radera ett inlägg
@@ -81,7 +77,7 @@ post('/posts/delete') do
         post = db.execute("SELECT * FROM posts WHERE post_id = ?", [post_id]).first
         if post.nil?
             halt 404, "Inlägget finns inte"
-        elsif post["creator"] != username
+        elsif post["user_id"].to_i != session[:user_id]
             halt 403, "Du har inte tillåtelse att radera detta inlägg"
         else
             db.execute("DELETE FROM posts WHERE post_id = ?", [post_id])
@@ -93,29 +89,21 @@ post('/posts/delete') do
 end
 
 get('/posts/:id/edit') do
-    if session[:id].nil?
-        redirect('/login')
-    else
-        db = SQLite3::Database.new("db/horoskop.db")
-        db.results_as_hash = true
-        post = db.execute("SELECT * FROM posts WHERE post_id = ?", [params[:id]]).first
-        db.close
+    db = SQLite3::Database.new("db/horoskop.db")
+    db.results_as_hash = true
+    post = db.execute("SELECT * FROM posts WHERE post_id = ?", [params[:id]]).first
+    db.close
 
-        if post.nil?
-            halt 404, "Inlägget hittades inte"
-        elsif post["creator"] != session[:username]
-            halt 403, "Du får inte redigera detta inlägg"
-        else
-            slim :"posts/edit", locals: { post: post }
-        end
+    if post.nil?
+        halt 404, "Inlägget hittades inte"
+    elsif post["user_id"].to_i != session[:user_id]
+        halt 403, "Du får inte redigera detta inlägg"
+    else
+        slim :"posts/edit", locals: { post: post }
     end
 end
 
 post('/posts/:id/edit') do
-    if session[:id].nil?
-        redirect('/login')
-    end
-    
     title = params[:title]
     content = params[:content]
     post_id = params[:id]
@@ -126,7 +114,7 @@ post('/posts/:id/edit') do
     
     if post.nil?
         halt 404, "Inlägget finns inte"
-    elsif post["creator"] != session[:username]
+    elsif post["user_id"].to_i != session[:user_id]
         halt 403, "Du får inte redigera detta inlägg"
     else
         db.execute("UPDATE posts SET title = ?, content = ? WHERE post_id = ?", [title, content, post_id])
@@ -136,25 +124,21 @@ post('/posts/:id/edit') do
 end
 
 # Användarprofil – visar information om inloggad användare
-get('/profile') do
-    if session[:id].nil?
+get('/profile') do      
+    db = SQLite3::Database.new("db/horoskop.db")
+    db.results_as_hash = true
+    user = db.execute("SELECT * FROM users WHERE user_id = ?", [session[:user_id].to_i]).first # Hämtar användardata baserat på session[:user_id]
+    db.close
+    if user.nil?
         redirect('/login')
-    else        
-        db = SQLite3::Database.new("db/horoskop.db")
-        db.results_as_hash = true
-        user = db.execute("SELECT * FROM users WHERE user_id = ?", [session[:id].to_i]).first # Hämtar användardata baserat på session[:id]
-        db.close
-        if user.nil?
-            redirect('/login')
-        else
-            slim :"users/profile", locals: {user: user}
-        end
+    else
+        slim :"users/profile", locals: {user: user}
     end
 end
 
 # Visar registreringssidan (om inte redan inloggad)
 get('/register') do
-    if session[:id]
+    if session[:user_id]
         redirect('/')
     else
         slim :"users/register"
@@ -182,7 +166,7 @@ end
 
 # Visar login-sidan (om inte redan inloggad)
 get('/login') do
-    if session[:id]
+    if session[:user_id]
         redirect('/')
     else
         slim :"users/login"
@@ -209,7 +193,7 @@ post('/login') do
     # Jämför lösenordet med den hash som finns lagrad
     if BCrypt::Password.new(pwdigest) == password
         # Sparar information i session
-        session[:id] = id
+        session[:user_id] = id
         session[:username] = username
         session[:name] = name
         session[:logged_in] = true

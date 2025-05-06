@@ -7,7 +7,7 @@ html lang="en"
         link rel="stylesheet" href="/css/style.css"/
     body 
     nav 
-    - if session[:id]
+    - if session[:user_id]
         a href="/logout" Logga ut
     - else
         a href="/login" Logga in
@@ -20,8 +20,9 @@ html lang="en"
         .post
             h3 = post["title"]
             p = post["content"]
-            p Skapad av: #{post["creator"]}
-            - if session[:username] == post["creator"]
+            p Skapad av: #{post["username"]}
+            - if session[:user_id] == post["user_id"].to_i
                 a href="/posts/#{post["post_id"]}/edit" Redigera
+                | |
                 a href="/posts/delete/#{post["post_id"]}" Radera
             p ----------
